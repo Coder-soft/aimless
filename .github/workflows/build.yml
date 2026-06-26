@@ -5,7 +5,8 @@ on:
     branches:
       - master
       - 1.21.11
-      - 26.x
+      - 26.1
+      - 26.2
 
 jobs:
   build:
@@ -15,7 +16,9 @@ jobs:
         include:
           - branch: 1.21.11
             java: 21
-          - branch: 26.x
+          - branch: 26.1
+            java: 25
+          - branch: 26.2
             java: 25
     runs-on: ubuntu-latest
     steps:
@@ -50,7 +53,7 @@ jobs:
           name: Aimless ${{ steps.date.outputs.timestamp }}
           body: |
             Automated build.
-            Branches: 1.21.11, 26.x
+            Branches: 1.21.11, 26.1, 26.2
             Build time: ${{ steps.date.outputs.timestamp }}
           files: aimless-*/*.jar
           fail_on_unmatched_files: true
