@@ -30,7 +30,7 @@ fabricApi {
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.layered {
-        mappings(file("src/main/resources/empty-mappings.tiny"))
+        officialMojangMappings()
     }
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
