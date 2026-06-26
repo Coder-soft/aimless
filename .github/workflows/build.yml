@@ -9,6 +9,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,9 +37,7 @@ jobs:
           path: build/libs/*.jar
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}-v${{ github.run_number }}
           name: Aimless ${{ github.ref_name }} - Build ${{ github.run_number }}
