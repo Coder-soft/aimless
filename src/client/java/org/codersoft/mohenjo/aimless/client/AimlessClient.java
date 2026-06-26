@@ -1,6 +1,8 @@
 package org.codersoft.mohenjo.aimless.client;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
+import net.fabricmc.fabric.api.client.command.v2.ClientCommands;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.client.Minecraft;
@@ -12,6 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import org.codersoft.mohenjo.aimless.util.PlayerEntityVerifier;
 import org.lwjgl.glfw.GLFW;
 
@@ -20,7 +23,7 @@ public class AimlessClient implements ClientModInitializer {
     private static KeyMapping aimKeyBind;
 
     private static final double MAX_RANGE = 3.0;
-    private static final int REACTION_TICKS = 6;
+    static int reactionTicks = 6;
     private int tickCounter = 0;
     private boolean aiming = false;
 
@@ -33,6 +36,22 @@ public class AimlessClient implements ClientModInitializer {
                 KeyMapping.Category.register(Identifier.fromNamespaceAndPath("aimless", "category"))
         ));
 
+        ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
+            dispatcher.register(ClientCommands.literal("aimless")
+                .then(ClientCommands.argument("ticks", IntegerArgumentType.integer(1, 100))
+                    .executes(ctx -> {
+                        reactionTicks = IntegerArgumentType.getInteger(ctx, "ticks");
+                        ctx.getSource().sendFeedback(Component.literal("§aReaction ticks set to " + reactionTicks));
+                        return 1;
+                    })
+                )
+                .executes(ctx -> {
+                    ctx.getSource().sendFeedback(Component.literal("§eReaction ticks: " + reactionTicks));
+                    return 1;
+                })
+            )
+        );
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             LocalPlayer player = client.player;
             ClientLevel level = client.level;
@@ -41,7 +60,7 @@ public class AimlessClient implements ClientModInitializer {
 
             if (aimKeyBind.consumeClick()) {
                 aiming = !aiming;
-                player.sendOverlayMessage(Component.literal(aiming ? "Aimless §aEnabled" : "Aimless §cDisabled"));
+                player.sendOverlayMessage(Component.literal(aiming ? "Aimless §aEnabled §7(rt: " + reactionTicks + ")" : "Aimless §cDisabled"));
             }
 
             if (!aiming) {
@@ -50,7 +69,7 @@ public class AimlessClient implements ClientModInitializer {
             }
 
             tickCounter++;
-            if (tickCounter < REACTION_TICKS) return;
+            if (tickCounter < reactionTicks) return;
             tickCounter = 0;
 
             Player closestTarget = findClosestPlayer(player, level);
