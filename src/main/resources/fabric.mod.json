@@ -7,7 +7,9 @@
   "authors": [
     "codersoft"
   ],
-  "contact": {},
+  "contact": {
+    "issues": "https://github.com/Coder-soft/aimless/issues"
+  },
   "license": "MIT",
   "icon": "assets/aimless/icon.png",
   "environment": "client",

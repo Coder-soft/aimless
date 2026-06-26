@@ -12,6 +12,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.Identifier;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.Vec3d;
+import org.codersoft.mohenjo.aimless.util.PlayerEntityVerifier;
 import org.lwjgl.glfw.GLFW;
 
 public class AimlessClient implements ClientModInitializer {
@@ -64,7 +65,7 @@ public class AimlessClient implements ClientModInitializer {
         double closestDistance = MAX_RANGE;
 
         for (PlayerEntity target : level.getPlayers()) {
-            if (target == player || !target.isAlive() || target.isInvisible()) continue;
+            if (target == player || !target.isAlive() || !PlayerEntityVerifier.isLegitimateHumanPlayer(target)) continue;
 
             double distance = player.distanceTo(target);
             if (distance < closestDistance) {
