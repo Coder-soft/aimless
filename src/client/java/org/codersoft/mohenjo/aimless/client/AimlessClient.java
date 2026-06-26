@@ -19,7 +19,7 @@ public class AimlessClient implements ClientModInitializer {
 
     private static KeyBinding aimKeyBind;
 
-    private static final double MAX_RANGE = 5.0;
+    private static final double MAX_RANGE = 3.0;
     private static final int REACTION_TICKS = 3;
     private int tickCounter = 0;
     private boolean aiming = false;
