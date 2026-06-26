@@ -1,5 +1,5 @@
 plugins {
-    id 'fabric-loom' version '1.17.12'
+    id 'net.fabricmc.fabric-loom' version '1.17.12'
     id 'maven-publish'
 }
 
@@ -21,17 +21,8 @@ loom {
     }
 }
 
-fabricApi {
-    configureDataGeneration {
-        client = true
-    }
-}
-
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
-    mappings loom.layered {
-        officialMojangMappings()
-    }
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 }
