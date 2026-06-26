@@ -1,4 +1,4 @@
-# Aimless
+# Aimless <img alt="Requires Fabric API" height="56" src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/requires/fabric-api_64h.png">
 
 Client-side Fabric mod — press **V** to toggle aim assist that snaps your view to the nearest player.
 
