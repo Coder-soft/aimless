@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "id": "aimless",
+  "version": "${version}",
+  "name": "Aimless",
+  "description": "Smooth aim assist mod for Minecraft. Press V to track and smoothly aim at nearby players.",
+  "authors": [
+    "codersoft"
+  ],
+  "contact": {},
+  "license": "MIT",
+  "icon": "assets/aimless/icon.png",
+  "environment": "client",
+  "entrypoints": {
+    "fabric-datagen": [
+      "org.codersoft.mohenjo.aimless.client.AimlessDataGenerator"
+    ],
+    "client": [
+      "org.codersoft.mohenjo.aimless.client.AimlessClient"
+    ],
+    "main": [
+      "org.codersoft.mohenjo.aimless.Aimless"
+    ]
+  },
+  "mixins": [
+    "aimless.mixins.json",
+    {
+      "config": "aimless.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}"
+  }
+}
