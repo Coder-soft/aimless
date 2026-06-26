@@ -12,25 +12,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.util.Mth;
 import org.codersoft.mohenjo.aimless.util.PlayerEntityVerifier;
 import org.lwjgl.glfw.GLFW;
-
-import java.util.Random;
 
 public class AimlessClient implements ClientModInitializer {
 
     private static KeyMapping aimKeyBind;
 
-    private static final double MAX_RANGE = 45.0;
+    private static final double MAX_RANGE = 5.0;
     private static final int REACTION_TICKS = 3;
-    private static final int TRACKING_TICKS = 2;
-    private static final float MAX_DEGREES_PER_TICK = 15.0f;
-    private static final float JITTER_STRENGTH = 0.15f;
-
-    private final Random random = new Random();
-    private float currentYawNoise = 0.0f;
-    private float currentPitchNoise = 0.0f;
     private int tickCounter = 0;
     private boolean aiming = false;
 
@@ -65,7 +55,7 @@ public class AimlessClient implements ClientModInitializer {
 
             Player closestTarget = findClosestPlayer(player, level);
             if (closestTarget != null) {
-                applySmoothAim(player, closestTarget);
+                applyAim(player, closestTarget);
             }
         });
     }
@@ -86,41 +76,20 @@ public class AimlessClient implements ClientModInitializer {
         return closest;
     }
 
-    private void applySmoothAim(LocalPlayer player, Player target) {
+    private void applyAim(LocalPlayer player, Player target) {
         Vec3 playerEyePos = player.getEyePosition();
-        Vec3 targetChestPos = target.position().add(0, target.getBbHeight() * 0.55f, 0);
+        Vec3 targetEyePos = target.getEyePosition();
 
-        double dx = targetChestPos.x - playerEyePos.x;
-        double dy = targetChestPos.y - playerEyePos.y;
-        double dz = targetChestPos.z - playerEyePos.z;
+        double dx = targetEyePos.x - playerEyePos.x;
+        double dy = targetEyePos.y - playerEyePos.y;
+        double dz = targetEyePos.z - playerEyePos.z;
         double distanceXZ = Math.sqrt(dx * dx + dz * dz);
 
         float targetYaw = (float) (Math.atan2(dz, dx) * 180.0 / Math.PI) - 90.0f;
         float targetPitch = (float) -(Math.atan2(dy, distanceXZ) * 180.0 / Math.PI);
+        targetPitch = Math.clamp(targetPitch, -90.0f, 90.0f);
 
-        float currentYaw = player.getYRot();
-        float currentPitch = player.getXRot();
-
-        float yawDifference = Mth.wrapDegrees(targetYaw - currentYaw);
-        float pitchDifference = targetPitch - currentPitch;
-
-        if (player.tickCount % 2 == 0) {
-            currentYawNoise = (float) (random.nextGaussian() * JITTER_STRENGTH);
-            currentPitchNoise = (float) (random.nextGaussian() * JITTER_STRENGTH);
-        }
-
-        float yawStep = yawDifference / TRACKING_TICKS;
-        float pitchStep = pitchDifference / TRACKING_TICKS;
-
-        yawStep = Mth.clamp(yawStep, -MAX_DEGREES_PER_TICK, MAX_DEGREES_PER_TICK);
-        pitchStep = Mth.clamp(pitchStep, -MAX_DEGREES_PER_TICK, MAX_DEGREES_PER_TICK);
-
-        float newYaw = currentYaw + yawStep + currentYawNoise;
-        float newPitch = currentPitch + pitchStep + currentPitchNoise;
-
-        newPitch = Mth.clamp(newPitch, -90.0f, 90.0f);
-
-        player.setYRot(newYaw);
-        player.setXRot(newPitch);
+        player.setYRot(targetYaw);
+        player.setXRot(targetPitch);
     }
 }
