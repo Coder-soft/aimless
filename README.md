@@ -8,6 +8,17 @@
 
 Client-side Fabric mod — press **V** to toggle aim assist that snaps your view to the nearest player.
 
+## How it works
+
+Once toggled on (`/aimless` to check, `/aimless <ticks>` to set reaction delay), the mod scans nearby players (max 3 blocks) every *reaction ticks* (default 6, ~300ms at 20 TPS) and snaps your crosshair to the nearest valid player's eye position on each tick.
+
+**What it checks:**
+- Only targets human players you can see (name-tagged, valid UUID)
+- Skips yourself, dead players, and players outside 3-block range
+- Ignores NPCs, bots, and non-player entities
+
+**Client-side only** — no server-side changes needed. Your rotation is updated locally via `setYaw`/`setPitch`. The `/aimless reaction` command is a Fabric client command; it resets to 6 when you rejoin.
+
 ## Install
 
 1. [Fabric Loader](https://fabricmc.net/use/) for your MC version
