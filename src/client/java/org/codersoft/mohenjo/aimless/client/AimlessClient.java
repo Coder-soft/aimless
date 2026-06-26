@@ -24,7 +24,7 @@ public class AimlessClient implements ClientModInitializer {
 
     private static final double MAX_RANGE = 45.0;
     private static final int REACTION_TICKS = 3;
-    private static final float AIM_SPEED = 0.12f;
+    private static final int TRACKING_TICKS = 2;
     private static final float MAX_DEGREES_PER_TICK = 15.0f;
     private static final float JITTER_STRENGTH = 0.15f;
 
@@ -109,8 +109,8 @@ public class AimlessClient implements ClientModInitializer {
             currentPitchNoise = (float) (random.nextGaussian() * JITTER_STRENGTH);
         }
 
-        float yawStep = yawDifference * AIM_SPEED;
-        float pitchStep = pitchDifference * AIM_SPEED;
+        float yawStep = yawDifference / TRACKING_TICKS;
+        float pitchStep = pitchDifference / TRACKING_TICKS;
 
         yawStep = MathHelper.clamp(yawStep, -MAX_DEGREES_PER_TICK, MAX_DEGREES_PER_TICK);
         pitchStep = MathHelper.clamp(pitchStep, -MAX_DEGREES_PER_TICK, MAX_DEGREES_PER_TICK);
