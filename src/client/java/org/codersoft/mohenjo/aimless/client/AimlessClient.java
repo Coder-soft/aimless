@@ -2,22 +2,22 @@ package org.codersoft.mohenjo.aimless.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.util.InputUtil;
-import net.minecraft.client.world.ClientWorld;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Identifier;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.KeyMapping;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.resources.Identifier;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
+import com.mojang.blaze3d.platform.InputConstants;
 import org.codersoft.mohenjo.aimless.util.PlayerEntityVerifier;
 import org.lwjgl.glfw.GLFW;
 
 public class AimlessClient implements ClientModInitializer {
 
-    private static KeyBinding aimKeyBind;
+    private static KeyMapping aimKeyBind;
 
     private static final double MAX_RANGE = 5.0;
     private static final int REACTION_TICKS = 3;
@@ -26,22 +26,22 @@ public class AimlessClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        aimKeyBind = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        aimKeyBind = KeyMappingHelper.registerKeyMapping(new KeyMapping(
                 "key.aimless.track",
-                InputUtil.Type.KEYSYM,
+                InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_V,
-                KeyBinding.Category.create(Identifier.of("aimless", "category"))
+                KeyMapping.Category.register(Identifier.fromNamespaceAndPath("aimless", "category"))
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            ClientPlayerEntity player = client.player;
-            ClientWorld level = client.world;
+            LocalPlayer player = client.player;
+            ClientLevel level = client.level;
 
             if (player == null || level == null) return;
 
-            if (aimKeyBind.wasPressed()) {
+            if (aimKeyBind.consumeClick()) {
                 aiming = !aiming;
-                player.sendMessage(Text.literal(aiming ? "Aimless §aEnabled" : "Aimless §cDisabled"), true);
+                player.sendOverlayMessage(Component.literal(aiming ? "Aimless §aEnabled" : "Aimless §cDisabled"));
             }
 
             if (!aiming) {
@@ -53,18 +53,18 @@ public class AimlessClient implements ClientModInitializer {
             if (tickCounter < REACTION_TICKS) return;
             tickCounter = 0;
 
-            PlayerEntity closestTarget = findClosestPlayer(player, level);
+            Player closestTarget = findClosestPlayer(player, level);
             if (closestTarget != null) {
                 applyAim(player, closestTarget);
             }
         });
     }
 
-    private PlayerEntity findClosestPlayer(ClientPlayerEntity player, ClientWorld level) {
-        PlayerEntity closest = null;
+    private Player findClosestPlayer(LocalPlayer player, ClientLevel level) {
+        Player closest = null;
         double closestDistance = MAX_RANGE;
 
-        for (PlayerEntity target : level.getPlayers()) {
+        for (Player target : level.players()) {
             if (target == player || !target.isAlive() || !PlayerEntityVerifier.isLegitimateHumanPlayer(target)) continue;
 
             double distance = player.distanceTo(target);
@@ -76,9 +76,9 @@ public class AimlessClient implements ClientModInitializer {
         return closest;
     }
 
-    private void applyAim(ClientPlayerEntity player, PlayerEntity target) {
-        Vec3d playerEyePos = player.getEyePos();
-        Vec3d targetEyePos = target.getEyePos();
+    private void applyAim(LocalPlayer player, Player target) {
+        Vec3 playerEyePos = player.getEyePosition();
+        Vec3 targetEyePos = target.getEyePosition();
 
         double dx = targetEyePos.x - playerEyePos.x;
         double dy = targetEyePos.y - playerEyePos.y;
@@ -89,7 +89,7 @@ public class AimlessClient implements ClientModInitializer {
         float targetPitch = (float) -(Math.atan2(dy, distanceXZ) * 180.0 / Math.PI);
         targetPitch = Math.clamp(targetPitch, -90.0f, 90.0f);
 
-        player.setYaw(targetYaw);
-        player.setPitch(targetPitch);
+        player.setYRot(targetYaw);
+        player.setXRot(targetPitch);
     }
 }

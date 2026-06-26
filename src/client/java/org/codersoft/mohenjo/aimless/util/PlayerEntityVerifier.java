@@ -1,8 +1,8 @@
 package org.codersoft.mohenjo.aimless.util;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.world.entity.player.Player;
 
 import java.util.regex.Pattern;
 
@@ -10,8 +10,13 @@ public final class PlayerEntityVerifier {
 
     private static final Pattern MOJANG_USERNAME_RULE = Pattern.compile("^[a-zA-Z0-9_]{2,16}$");
 
-    public static boolean isLegitimateHumanPlayer(PlayerEntity target) {
-        if (target == null || target.isMainPlayer() || target.isRemoved()) {
+    public static boolean isLegitimateHumanPlayer(Player target) {
+        if (target == null || target.isRemoved()) {
+            return false;
+        }
+
+        Minecraft client = Minecraft.getInstance();
+        if (target == client.player) {
             return false;
         }
 
@@ -29,12 +34,11 @@ public final class PlayerEntityVerifier {
             return false;
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.getNetworkHandler() == null) {
+        if (client.getConnection() == null) {
             return false;
         }
 
-        PlayerListEntry networkRegistryEntry = client.getNetworkHandler().getPlayerListEntry(target.getUuid());
+        PlayerInfo networkRegistryEntry = client.getConnection().getPlayerInfo(target.getUUID());
         if (networkRegistryEntry == null) {
             return false;
         }
@@ -48,21 +52,21 @@ public final class PlayerEntityVerifier {
             return false;
         }
 
-        if (target.age < 20) {
-            double rangeSquared = target.squaredDistanceTo(client.player);
+        if (target.tickCount < 20) {
+            double rangeSquared = target.distanceToSqr(client.player);
             if (rangeSquared <= 36.0) {
                 return false;
             }
         }
 
         if (target.isInvisible()) {
-            if (target.getStatusEffects().isEmpty()) {
+            if (target.getActiveEffects().isEmpty()) {
                 return false;
             }
         }
 
-        if (!target.isOnGround() && !target.getAbilities().flying && !target.isGliding()) {
-            if (target.getVelocity().y == 0.0 && target.getVelocity().horizontalLength() > 0.0) {
+        if (!target.onGround() && !target.getAbilities().flying && !target.isFallFlying()) {
+            if (target.getDeltaMovement().y == 0.0 && target.getDeltaMovement().horizontalDistance() > 0.0) {
                 return false;
             }
         }
