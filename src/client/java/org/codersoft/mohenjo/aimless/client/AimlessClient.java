@@ -23,7 +23,7 @@ public class AimlessClient implements ClientModInitializer {
     private static KeyBinding aimKeyBind;
 
     private static final double MAX_RANGE = 3.0;
-    static int reactionTicks = 6;
+    private static final AimlessConfig CONFIG = AimlessConfig.load();
     private int tickCounter = 0;
     private boolean aiming = false;
 
@@ -40,13 +40,14 @@ public class AimlessClient implements ClientModInitializer {
             dispatcher.register(ClientCommandManager.literal("aimless")
                 .then(ClientCommandManager.argument("ticks", IntegerArgumentType.integer(1, 100))
                     .executes(ctx -> {
-                        reactionTicks = IntegerArgumentType.getInteger(ctx, "ticks");
-                        ctx.getSource().sendFeedback(Text.literal("§aReaction ticks set to " + reactionTicks));
+                        int value = IntegerArgumentType.getInteger(ctx, "ticks");
+                        CONFIG.setReactionTicks(value);
+                        ctx.getSource().sendFeedback(Text.literal("§aReaction ticks set to " + value));
                         return 1;
                     })
                 )
                 .executes(ctx -> {
-                    ctx.getSource().sendFeedback(Text.literal("§eReaction ticks: " + reactionTicks));
+                    ctx.getSource().sendFeedback(Text.literal("§eReaction ticks: " + CONFIG.getReactionTicks()));
                     return 1;
                 })
             )
@@ -60,7 +61,7 @@ public class AimlessClient implements ClientModInitializer {
 
             if (aimKeyBind.wasPressed()) {
                 aiming = !aiming;
-                player.sendMessage(Text.literal(aiming ? "Aimless §aEnabled §7(rt: " + reactionTicks + ")" : "Aimless §cDisabled"), true);
+                player.sendMessage(Text.literal(aiming ? "Aimless §aEnabled §7(rt: " + CONFIG.getReactionTicks() + ")" : "Aimless §cDisabled"), true);
             }
 
             if (!aiming) {
@@ -69,7 +70,7 @@ public class AimlessClient implements ClientModInitializer {
             }
 
             tickCounter++;
-            if (tickCounter < reactionTicks) return;
+            if (tickCounter < CONFIG.getReactionTicks()) return;
             tickCounter = 0;
 
             PlayerEntity closestTarget = findClosestPlayer(player, level);
