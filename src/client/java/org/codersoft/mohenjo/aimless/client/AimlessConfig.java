@@ -11,6 +11,8 @@ import java.io.Reader;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AimlessConfig {
     private static final Logger LOGGER = LoggerFactory.getLogger("aimless");
@@ -18,6 +20,7 @@ public class AimlessConfig {
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("aimless.json");
 
     private int reactionTicks = 6;
+    private List<String> exceptions = new ArrayList<>();
 
     public int getReactionTicks() {
         return reactionTicks;
@@ -26,6 +29,35 @@ public class AimlessConfig {
     public void setReactionTicks(int reactionTicks) {
         this.reactionTicks = reactionTicks;
         save();
+    }
+
+    public List<String> getExceptions() {
+        return exceptions;
+    }
+
+    public boolean isExcepted(String playerName) {
+        return exceptions.stream().anyMatch(e -> e.equalsIgnoreCase(playerName));
+    }
+
+    public void addException(String playerName) {
+        String lower = playerName.toLowerCase();
+        if (exceptions.stream().noneMatch(e -> e.equalsIgnoreCase(lower))) {
+            exceptions.add(lower);
+            save();
+        }
+    }
+
+    public void removeException(String playerName) {
+        if (exceptions.removeIf(e -> e.equalsIgnoreCase(playerName))) {
+            save();
+        }
+    }
+
+    public void clearExceptions() {
+        if (!exceptions.isEmpty()) {
+            exceptions.clear();
+            save();
+        }
     }
 
     public static AimlessConfig load() {
