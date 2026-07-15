@@ -23,7 +23,7 @@ public class AimlessClient implements ClientModInitializer {
     private static KeyMapping aimKeyBind;
 
     private static final double MAX_RANGE = 3.0;
-    static int reactionTicks = 6;
+    private static final AimlessConfig CONFIG = AimlessConfig.load();
     private int tickCounter = 0;
     private boolean aiming = false;
 
@@ -40,13 +40,14 @@ public class AimlessClient implements ClientModInitializer {
             dispatcher.register(ClientCommands.literal("aimless")
                 .then(ClientCommands.argument("ticks", IntegerArgumentType.integer(1, 100))
                     .executes(ctx -> {
-                        reactionTicks = IntegerArgumentType.getInteger(ctx, "ticks");
-                        ctx.getSource().sendFeedback(Component.literal("§aReaction ticks set to " + reactionTicks));
+                        int value = IntegerArgumentType.getInteger(ctx, "ticks");
+                        CONFIG.setReactionTicks(value);
+                        ctx.getSource().sendFeedback(Component.literal("§aReaction ticks set to " + value));
                         return 1;
                     })
                 )
                 .executes(ctx -> {
-                    ctx.getSource().sendFeedback(Component.literal("§eReaction ticks: " + reactionTicks));
+                    ctx.getSource().sendFeedback(Component.literal("§eReaction ticks: " + CONFIG.getReactionTicks()));
                     return 1;
                 })
             )
@@ -60,7 +61,7 @@ public class AimlessClient implements ClientModInitializer {
 
             if (aimKeyBind.consumeClick()) {
                 aiming = !aiming;
-                player.sendOverlayMessage(Component.literal(aiming ? "Aimless §aEnabled §7(rt: " + reactionTicks + ")" : "Aimless §cDisabled"));
+                player.sendOverlayMessage(Component.literal(aiming ? "Aimless §aEnabled §7(rt: " + CONFIG.getReactionTicks() + ")" : "Aimless §cDisabled"));
             }
 
             if (!aiming) {
@@ -69,7 +70,7 @@ public class AimlessClient implements ClientModInitializer {
             }
 
             tickCounter++;
-            if (tickCounter < reactionTicks) return;
+            if (tickCounter < CONFIG.getReactionTicks()) return;
             tickCounter = 0;
 
             Player closestTarget = findClosestPlayer(player, level);
