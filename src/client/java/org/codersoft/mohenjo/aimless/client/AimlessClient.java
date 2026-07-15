@@ -15,6 +15,9 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import org.codersoft.mohenjo.aimless.util.PlayerEntityVerifier;
 import org.lwjgl.glfw.GLFW;
 
@@ -36,8 +39,71 @@ public class AimlessClient implements ClientModInitializer {
                 KeyMapping.Category.register(Identifier.fromNamespaceAndPath("aimless", "category"))
         ));
 
+        SuggestionProvider<FabricClientCommandSource> PLAYER_SUGGESTIONS = (ctx, builder) -> {
+            Minecraft client = Minecraft.getInstance();
+            ClientLevel level = client.level;
+            if (level != null) {
+                for (Player p : level.players()) {
+                    if (p != client.player) {
+                        builder.suggest(p.getGameProfile().name());
+                    }
+                }
+            }
+            return builder.buildFuture();
+        };
+
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
             dispatcher.register(ClientCommands.literal("aimless")
+                .then(ClientCommands.literal("exception")
+                    .then(ClientCommands.literal("add")
+                        .then(ClientCommands.argument("player", StringArgumentType.word())
+                            .suggests(PLAYER_SUGGESTIONS)
+                            .executes(ctx -> {
+                                String name = StringArgumentType.getString(ctx, "player");
+                                if (CONFIG.isExcepted(name)) {
+                                    ctx.getSource().sendFeedback(Component.literal("§e" + name + " is already excepted"));
+                                } else {
+                                    CONFIG.addException(name);
+                                    ctx.getSource().sendFeedback(Component.literal("§aAdded " + name + " to exception list"));
+                                }
+                                return 1;
+                            })
+                        )
+                    )
+                    .then(ClientCommands.literal("remove")
+                        .then(ClientCommands.argument("player", StringArgumentType.word())
+                            .suggests(PLAYER_SUGGESTIONS)
+                            .executes(ctx -> {
+                                String name = StringArgumentType.getString(ctx, "player");
+                                if (CONFIG.isExcepted(name)) {
+                                    CONFIG.removeException(name);
+                                    ctx.getSource().sendFeedback(Component.literal("§aRemoved " + name + " from exception list"));
+                                } else {
+                                    ctx.getSource().sendFeedback(Component.literal("§e" + name + " is not in the exception list"));
+                                }
+                                return 1;
+                            })
+                        )
+                    )
+                    .then(ClientCommands.literal("list")
+                        .executes(ctx -> {
+                            java.util.List<String> ex = CONFIG.getExceptions();
+                            if (ex.isEmpty()) {
+                                ctx.getSource().sendFeedback(Component.literal("§eNo exceptions configured"));
+                            } else {
+                                ctx.getSource().sendFeedback(Component.literal("§eExceptions: " + String.join(", ", ex)));
+                            }
+                            return 1;
+                        })
+                    )
+                    .then(ClientCommands.literal("clear")
+                        .executes(ctx -> {
+                            CONFIG.clearExceptions();
+                            ctx.getSource().sendFeedback(Component.literal("§aCleared all exceptions"));
+                            return 1;
+                        })
+                    )
+                )
                 .then(ClientCommands.argument("ticks", IntegerArgumentType.integer(1, 100))
                     .executes(ctx -> {
                         int value = IntegerArgumentType.getInteger(ctx, "ticks");
@@ -85,7 +151,8 @@ public class AimlessClient implements ClientModInitializer {
         double closestDistance = MAX_RANGE;
 
         for (Player target : level.players()) {
-            if (target == player || !target.isAlive() || !PlayerEntityVerifier.isLegitimateHumanPlayer(target)) continue;
+            if (target == player || !target.isAlive() || !PlayerEntityVerifier.isLegitimateHumanPlayer(target)
+                || CONFIG.isExcepted(target.getGameProfile().name())) continue;
 
             double distance = player.distanceTo(target);
             if (distance < closestDistance) {
