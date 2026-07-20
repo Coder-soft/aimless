@@ -25,8 +25,7 @@ public class AimlessClient implements ClientModInitializer {
 
     private static KeyMapping aimKeyBind;
 
-    private static final double MAX_RANGE = 3.0;
-    private static final AimlessConfig CONFIG = AimlessConfig.load();
+    private static final double MAX_RANGE = 4.0;
     private int tickCounter = 0;
     private boolean aiming = false;
 
@@ -54,16 +53,24 @@ public class AimlessClient implements ClientModInitializer {
 
         ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) ->
             dispatcher.register(ClientCommands.literal("aimless")
+                .then(ClientCommands.literal("config")
+                    .executes(ctx -> {
+                        Minecraft.getInstance().execute(() ->
+                            Minecraft.getInstance().setScreenAndShow(AimlessConfigScreen.build(null))
+                        );
+                        return 1;
+                    })
+                )
                 .then(ClientCommands.literal("exception")
                     .then(ClientCommands.literal("add")
                         .then(ClientCommands.argument("player", StringArgumentType.word())
                             .suggests(PLAYER_SUGGESTIONS)
                             .executes(ctx -> {
                                 String name = StringArgumentType.getString(ctx, "player");
-                                if (CONFIG.isExcepted(name)) {
+                                if (AimlessConfig.CONFIG.isExcepted(name)) {
                                     ctx.getSource().sendFeedback(Component.literal("§e" + name + " is already excepted"));
                                 } else {
-                                    CONFIG.addException(name);
+                                    AimlessConfig.CONFIG.addException(name);
                                     ctx.getSource().sendFeedback(Component.literal("§aAdded " + name + " to exception list"));
                                 }
                                 return 1;
@@ -75,8 +82,8 @@ public class AimlessClient implements ClientModInitializer {
                             .suggests(PLAYER_SUGGESTIONS)
                             .executes(ctx -> {
                                 String name = StringArgumentType.getString(ctx, "player");
-                                if (CONFIG.isExcepted(name)) {
-                                    CONFIG.removeException(name);
+                                if (AimlessConfig.CONFIG.isExcepted(name)) {
+                                    AimlessConfig.CONFIG.removeException(name);
                                     ctx.getSource().sendFeedback(Component.literal("§aRemoved " + name + " from exception list"));
                                 } else {
                                     ctx.getSource().sendFeedback(Component.literal("§e" + name + " is not in the exception list"));
@@ -87,7 +94,7 @@ public class AimlessClient implements ClientModInitializer {
                     )
                     .then(ClientCommands.literal("list")
                         .executes(ctx -> {
-                            java.util.List<String> ex = CONFIG.getExceptions();
+                            java.util.List<String> ex = AimlessConfig.CONFIG.getExceptions();
                             if (ex.isEmpty()) {
                                 ctx.getSource().sendFeedback(Component.literal("§eNo exceptions configured"));
                             } else {
@@ -98,7 +105,7 @@ public class AimlessClient implements ClientModInitializer {
                     )
                     .then(ClientCommands.literal("clear")
                         .executes(ctx -> {
-                            CONFIG.clearExceptions();
+                            AimlessConfig.CONFIG.clearExceptions();
                             ctx.getSource().sendFeedback(Component.literal("§aCleared all exceptions"));
                             return 1;
                         })
@@ -107,13 +114,13 @@ public class AimlessClient implements ClientModInitializer {
                 .then(ClientCommands.argument("ticks", IntegerArgumentType.integer(1, 100))
                     .executes(ctx -> {
                         int value = IntegerArgumentType.getInteger(ctx, "ticks");
-                        CONFIG.setReactionTicks(value);
+                        AimlessConfig.CONFIG.setReactionTicks(value);
                         ctx.getSource().sendFeedback(Component.literal("§aReaction ticks set to " + value));
                         return 1;
                     })
                 )
                 .executes(ctx -> {
-                    ctx.getSource().sendFeedback(Component.literal("§eReaction ticks: " + CONFIG.getReactionTicks()));
+                    ctx.getSource().sendFeedback(Component.literal("§eReaction ticks: " + AimlessConfig.CONFIG.getReactionTicks()));
                     return 1;
                 })
             )
@@ -127,7 +134,10 @@ public class AimlessClient implements ClientModInitializer {
 
             if (aimKeyBind.consumeClick()) {
                 aiming = !aiming;
-                player.sendOverlayMessage(Component.literal(aiming ? "Aimless §aEnabled §7(rt: " + CONFIG.getReactionTicks() + ")" : "Aimless §cDisabled"));
+                player.sendOverlayMessage(Component.literal(aiming
+                        ? String.format("Aimless §aEnabled §7(h: %.0f%% x: %+.1f z: %+.1f rt: %d)",
+                        AimlessConfig.CONFIG.getBodyHeight() * 100, AimlessConfig.CONFIG.getOffsetX(), AimlessConfig.CONFIG.getOffsetZ(), AimlessConfig.CONFIG.getReactionTicks())
+                        : "Aimless §cDisabled"));
             }
 
             if (!aiming) {
@@ -136,7 +146,7 @@ public class AimlessClient implements ClientModInitializer {
             }
 
             tickCounter++;
-            if (tickCounter < CONFIG.getReactionTicks()) return;
+            if (tickCounter < AimlessConfig.CONFIG.getReactionTicks()) return;
             tickCounter = 0;
 
             Player closestTarget = findClosestPlayer(player, level);
@@ -152,7 +162,7 @@ public class AimlessClient implements ClientModInitializer {
 
         for (Player target : level.players()) {
             if (target == player || !target.isAlive() || !PlayerEntityVerifier.isLegitimateHumanPlayer(target)
-                || CONFIG.isExcepted(target.getGameProfile().name())) continue;
+                || AimlessConfig.CONFIG.isExcepted(target.getGameProfile().name())) continue;
 
             double distance = player.distanceTo(target);
             if (distance < closestDistance) {
@@ -165,11 +175,14 @@ public class AimlessClient implements ClientModInitializer {
 
     private void applyAim(LocalPlayer player, Player target) {
         Vec3 playerEyePos = player.getEyePosition();
-        Vec3 targetEyePos = target.getEyePosition();
 
-        double dx = targetEyePos.x - playerEyePos.x;
-        double dy = targetEyePos.y - playerEyePos.y;
-        double dz = targetEyePos.z - playerEyePos.z;
+        double targetX = target.getX() + AimlessConfig.CONFIG.getOffsetX();
+        double targetY = target.getY() + (AimlessConfig.CONFIG.getBodyHeight() * target.getBbHeight());
+        double targetZ = target.getZ() + AimlessConfig.CONFIG.getOffsetZ();
+
+        double dx = targetX - playerEyePos.x;
+        double dy = targetY - playerEyePos.y;
+        double dz = targetZ - playerEyePos.z;
         double distanceXZ = Math.sqrt(dx * dx + dz * dz);
 
         float targetYaw = (float) (Math.atan2(dz, dx) * 180.0 / Math.PI) - 90.0f;
