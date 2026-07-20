@@ -22,6 +22,9 @@
     ],
     "main": [
       "org.codersoft.mohenjo.aimless.Aimless"
+    ],
+    "modmenu": [
+      "org.codersoft.mohenjo.aimless.client.AimlessModMenu"
     ]
   },
   "mixins": [
@@ -34,6 +37,7 @@
   "depends": {
     "fabricloader": ">=${loader_version}",
     "fabric-api": "*",
-    "minecraft": "${minecraft_version}"
+    "minecraft": "${minecraft_version}",
+    "cloth-config": ">=16.0.0"
   }
 }

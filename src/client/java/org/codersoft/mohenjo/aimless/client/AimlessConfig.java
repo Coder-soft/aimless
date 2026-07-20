@@ -19,8 +19,13 @@ public class AimlessConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("aimless.json");
 
+    public static final AimlessConfig CONFIG = load();
+
     private int reactionTicks = 6;
     private List<String> exceptions = new ArrayList<>();
+    private double bodyHeight = 0.8;
+    private double offsetX = 0.0;
+    private double offsetZ = 0.0;
 
     public int getReactionTicks() {
         return reactionTicks;
@@ -58,6 +63,33 @@ public class AimlessConfig {
             exceptions.clear();
             save();
         }
+    }
+
+    public double getBodyHeight() {
+        return bodyHeight;
+    }
+
+    public void setBodyHeight(double bodyHeight) {
+        this.bodyHeight = bodyHeight;
+        save();
+    }
+
+    public double getOffsetX() {
+        return offsetX;
+    }
+
+    public void setOffsetX(double offsetX) {
+        this.offsetX = offsetX;
+        save();
+    }
+
+    public double getOffsetZ() {
+        return offsetZ;
+    }
+
+    public void setOffsetZ(double offsetZ) {
+        this.offsetZ = offsetZ;
+        save();
     }
 
     public static AimlessConfig load() {
